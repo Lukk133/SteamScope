@@ -1,8 +1,8 @@
 """Scraper recenzji ze Steam Community.
 
-Strategia: parsujemy stronę publiczną `steamcommunity.com/app/{appid}/reviews/`.
-W tym module wprowadzamy najpierw czystą funkcję `parse_reviews_html` (Task 7),
-a w Task 8 — wrapper HTTP `scrape_reviews` / `scrape_many`.
+Strategia: parsujemy publiczną stronę `steamcommunity.com/app/{appid}/reviews/`.
+Moduł eksportuje czysty parser HTML (`parse_reviews_html`) oraz wrapper HTTP
+(`scrape_reviews` dla pojedynczej gry, `scrape_many` dla batcha).
 """
 from __future__ import annotations
 

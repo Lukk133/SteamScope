@@ -86,6 +86,7 @@ class IngestionConfig:
     steam_api_rate_limit_seconds: float = 1.5
     steamspy_rate_limit_seconds: float = 1.0
     reviews_rate_limit_seconds: float = 2.0
+    # Reserved for Phase 2 retry logic; currently unused in fetch_many.
     steam_api_max_retries: int = 3
     http_timeout_seconds: int = 30
     user_agent: str = "SteamAnalyticsProject/1.0 (educational; +https://github.com/local)"

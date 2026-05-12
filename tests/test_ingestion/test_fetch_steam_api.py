@@ -10,7 +10,12 @@ import requests
 import responses
 
 from backend.ingestion import fetch_steam_api
-from backend.ingestion.fetch_steam_api import STEAM_API_URL, SteamAPIError, fetch_game_details, fetch_many
+from backend.ingestion.fetch_steam_api import (
+    STEAM_API_URL,
+    SteamAPIError,
+    fetch_game_details,
+    fetch_many,
+)
 
 
 @responses.activate
