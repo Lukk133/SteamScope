@@ -29,6 +29,7 @@ def stage_kaggle(csv_path: Path, conn: sqlite3.Connection) -> int:
     if not csv_path.exists():
         logger.warning("Kaggle CSV not found at %s — staging 0 rows", csv_path)
         pd.DataFrame().to_sql("stg_kaggle", conn, if_exists="replace", index=False)
+        conn.commit()
         return 0
 
     df = pd.read_csv(csv_path)
@@ -72,11 +73,7 @@ def stage_steam_api(source_dir: Path, conn: sqlite3.Connection) -> int:
                 "is_free": int(bool(data.get("is_free"))),
                 "developers": ",".join(data.get("developers", []) or []),
                 "publishers": ",".join(data.get("publishers", []) or []),
-                "price_usd": (
-                    (data.get("price_overview") or {}).get("final", 0) / 100
-                    if data.get("price_overview")
-                    else 0.0
-                ),
+                "price_usd": (data.get("price_overview") or {}).get("final", 0) / 100,
                 "windows": int(bool((data.get("platforms") or {}).get("windows"))),
                 "mac": int(bool((data.get("platforms") or {}).get("mac"))),
                 "linux": int(bool((data.get("platforms") or {}).get("linux"))),
@@ -136,9 +133,18 @@ def stage_reviews(source_dir: Path, conn: sqlite3.Connection) -> int:
             except json.JSONDecodeError:
                 logger.warning("Skipping malformed JSON: %s", path)
                 continue
+            file_appid = int(path.stem.split("_")[0]) if path.stem.split("_")[0].isdigit() else None
             for r in reviews or []:
+                appid_raw = r.get("appid")
+                try:
+                    appid = int(appid_raw) if appid_raw is not None else file_appid
+                except (TypeError, ValueError):
+                    appid = file_appid
+                if appid is None:
+                    logger.warning("Skipping review without resolvable appid in %s", path)
+                    continue
                 rows.append({
-                    "appid": int(r.get("appid")),
+                    "appid": appid,
                     "author": r.get("author"),
                     "voted_up": int(bool(r.get("voted_up"))),
                     "playtime_hours": r.get("playtime_hours"),

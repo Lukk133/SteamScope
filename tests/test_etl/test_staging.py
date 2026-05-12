@@ -90,3 +90,36 @@ def test_stage_reviews_handles_empty_dir(conn, tmp_path) -> None:
     assert rows == 0
     df = pd.read_sql("SELECT * FROM stg_reviews", conn)
     assert len(df) == 0
+
+
+def test_stage_steam_api_skips_malformed_json(tmp_path: Path, conn) -> None:
+    source = tmp_path / "steam_api"
+    source.mkdir()
+    (source / "70.json").write_text(
+        '{"steam_appid": 70, "name": "OK", "is_free": false}', encoding="utf-8"
+    )
+    (source / "bad.json").write_text("not json {{{", encoding="utf-8")
+    rows = stage_steam_api(source, conn)
+    assert rows == 1
+    df = pd.read_sql("SELECT appid FROM stg_steam_api", conn)
+    assert df["appid"].tolist() == [70]
+
+
+def test_stage_kaggle_replace_idempotent(conn) -> None:
+    rows1 = stage_kaggle(FIXTURES / "etl_sample_kaggle.csv", conn)
+    rows2 = stage_kaggle(FIXTURES / "etl_sample_kaggle.csv", conn)
+    assert rows1 == rows2 == 5
+    df = pd.read_sql("SELECT COUNT(*) AS c FROM stg_kaggle", conn)
+    assert df["c"].iloc[0] == 5  # NOT 10
+
+
+def test_stage_reviews_skips_review_without_appid(tmp_path: Path, conn) -> None:
+    source = tmp_path / "reviews"
+    source.mkdir()
+    (source / "abc_reviews.json").write_text(
+        '[{"author": "X", "voted_up": true, "review_text": "no appid"}]',
+        encoding="utf-8",
+    )
+    # File stem 'abc' is not a digit → no fallback appid → review is skipped.
+    rows = stage_reviews(source, conn)
+    assert rows == 0
