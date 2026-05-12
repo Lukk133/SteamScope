@@ -1,0 +1,22 @@
+{
+  "appid": 70,
+  "name": "Half-Life",
+  "developer": "Valve",
+  "publisher": "Valve",
+  "score_rank": "",
+  "positive": 67000,
+  "negative": 1500,
+  "userscore": 0,
+  "owners": "5,000,000 .. 10,000,000",
+  "average_forever": 380,
+  "average_2weeks": 0,
+  "median_forever": 145,
+  "median_2weeks": 0,
+  "price": "999",
+  "initialprice": "999",
+  "discount": "0",
+  "ccu": 350,
+  "languages": "English, French, German",
+  "genre": "Action, FPS",
+  "tags": {"FPS": 5200, "Classic": 4800}
+}
