@@ -90,3 +90,36 @@ def test_load_is_idempotent(populated_conn) -> None:
     assert rows_before == rows_after
     maps2 = load_all_dimensions(populated_conn)
     assert maps1["genre"] == maps2["genre"]
+
+
+def test_dim_developer_upsert_refreshes_counts(tmp_path) -> None:
+    """When staging data changes between runs, developer counts must refresh
+    while developer_key stays stable (FK-preserving)."""
+    from backend.warehouse.connection import connect, init_schema
+
+    conn = connect(tmp_path / "test.db")
+    init_schema(conn)
+    # Initial load: IndieDev appears once
+    pd.DataFrame([{"appid": 1, "developers": "IndieDev"}]).to_sql(
+        "stg_kaggle", conn, if_exists="replace", index=False,
+    )
+    maps1 = load_all_dimensions(conn)
+    key1 = maps1["developer"]["IndieDev"]
+    row1 = conn.execute(
+        "SELECT games_count, developer_class FROM dim_developer WHERE name = 'IndieDev'"
+    ).fetchone()
+    assert row1 == (1, "indie")
+
+    # Re-run with 5 games: classification should bump to AA
+    pd.DataFrame(
+        [{"appid": i, "developers": "IndieDev"} for i in range(1, 6)]
+    ).to_sql("stg_kaggle", conn, if_exists="replace", index=False)
+    maps2 = load_all_dimensions(conn)
+    key2 = maps2["developer"]["IndieDev"]
+    row2 = conn.execute(
+        "SELECT games_count, developer_class FROM dim_developer WHERE name = 'IndieDev'"
+    ).fetchone()
+    assert row2 == (5, "AA")
+    # Key must be stable for FK preservation
+    assert key1 == key2
+    conn.close()

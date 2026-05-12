@@ -55,9 +55,17 @@ def _developer_counts(conn: sqlite3.Connection) -> dict[str, int]:
 
 
 def _load_dim_developer(conn: sqlite3.Connection) -> dict[str, int]:
+    """Ładuje dim_developer. Re-run aktualizuje games_count i developer_class
+    (UPSERT), zachowując developer_key dla istniejących wpisów (FK-safe)."""
     for name, count in _developer_counts(conn).items():
         conn.execute(
-            "INSERT OR IGNORE INTO dim_developer (name, games_count, developer_class) VALUES (?, ?, ?)",
+            """
+            INSERT INTO dim_developer (name, games_count, developer_class)
+            VALUES (?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET
+                games_count = excluded.games_count,
+                developer_class = excluded.developer_class
+            """,
             (name, count, classify_developer(count)),
         )
     conn.commit()
