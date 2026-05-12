@@ -5,8 +5,8 @@ wyłączone w SQLite — włączamy je przez PRAGMA przy każdym połączeniu.
 """
 from __future__ import annotations
 
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 
 from backend.config import PATHS
 

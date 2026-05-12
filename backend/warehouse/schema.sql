@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS dim_price_range (
 CREATE TABLE IF NOT EXISTS dim_release_period (
     release_period_key INTEGER PRIMARY KEY AUTOINCREMENT,
     year       INTEGER NOT NULL,
-    quarter    INTEGER NOT NULL,
-    month      INTEGER NOT NULL,
+    quarter    INTEGER NOT NULL CHECK (quarter BETWEEN 1 AND 4),
+    month      INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
     month_name TEXT NOT NULL,
     season     TEXT NOT NULL,
     UNIQUE (year, month)
@@ -48,12 +48,12 @@ CREATE TABLE IF NOT EXISTS dim_sentiment (
 
 CREATE TABLE IF NOT EXISTS dim_date (
     date_key    INTEGER PRIMARY KEY,
-    date        TEXT NOT NULL,
+    date        TEXT NOT NULL UNIQUE,
     year        INTEGER NOT NULL,
-    quarter     INTEGER NOT NULL,
-    month       INTEGER NOT NULL,
-    day         INTEGER NOT NULL,
-    day_of_week INTEGER NOT NULL
+    quarter     INTEGER NOT NULL CHECK (quarter BETWEEN 1 AND 4),
+    month       INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+    day         INTEGER NOT NULL CHECK (day BETWEEN 1 AND 31),
+    day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 0 AND 6)
 );
 
 -- ============================================================
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS fact_reviews (
     sentiment_label_key       INTEGER REFERENCES dim_sentiment(sentiment_key),
     helpful_count             INTEGER,
     playtime_at_review_hours  REAL,
-    voted_up                  INTEGER
+    voted_up                  INTEGER CHECK (voted_up IN (0, 1) OR voted_up IS NULL)
 );
 
 -- ============================================================

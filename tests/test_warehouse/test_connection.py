@@ -90,3 +90,39 @@ def test_fact_games_has_expected_columns(tmp_path: Path) -> None:
     }
     assert expected == cols
     conn.close()
+
+
+def test_developer_class_check_constraint_rejects_invalid(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "wh.db")
+    init_schema(conn)
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute(
+            "INSERT INTO dim_developer (name, games_count, developer_class) "
+            "VALUES ('X', 1, 'triple-a')"
+        )
+    conn.close()
+
+
+def test_foreign_keys_actually_enforced(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "wh.db")
+    init_schema(conn)
+    # insert fact_games with a genre_key that does not exist
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute(
+            "INSERT INTO fact_games (game_id, name, genre_key) VALUES (1, 'X', 99999)"
+        )
+    conn.close()
+
+
+def test_fact_reviews_has_expected_columns(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "wh.db")
+    init_schema(conn)
+    cur = conn.execute("PRAGMA table_info(fact_reviews)")
+    cols = {row[1] for row in cur.fetchall()}
+    expected = {
+        "review_id", "game_id", "review_date_key", "sentiment_score",
+        "sentiment_label_key", "helpful_count", "playtime_at_review_hours",
+        "voted_up",
+    }
+    assert expected == cols
+    conn.close()
