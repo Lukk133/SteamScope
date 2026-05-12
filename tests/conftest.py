@@ -1,4 +1,6 @@
 """Wspólne fixtury pytestowe dla całego projektu."""
+# Fixtury sample_steam_api_payload / sample_steamspy_payload / sample_reviews_html
+# czytają pliki z tests/fixtures/ tworzone w późniejszych zadaniach Fazy 1 (Task 4, 6, 7).
 from __future__ import annotations
 
 import json
