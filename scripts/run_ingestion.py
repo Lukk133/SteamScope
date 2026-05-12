@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from pathlib import Path
 
 from backend.config import PATHS
 from backend.ingestion.fetch_steam_api import fetch_many as fetch_steam_api_many
