@@ -6,12 +6,24 @@ a w Task 8 — wrapper HTTP `scrape_reviews` / `scrape_many`.
 """
 from __future__ import annotations
 
+import json
 import logging
-from dataclasses import dataclass
+import time
+from dataclasses import asdict, dataclass
+from pathlib import Path
 
+import requests
 from bs4 import BeautifulSoup
 
+from backend.config import INGESTION, PATHS
+
 logger = logging.getLogger(__name__)
+
+REVIEWS_URL_TEMPLATE = "https://steamcommunity.com/app/{appid}/reviews/"
+
+
+class ReviewScrapingError(Exception):
+    """Błąd scrapowania recenzji Steam."""
 
 
 @dataclass
@@ -73,3 +85,74 @@ def parse_reviews_html(html: str, appid: int) -> list[Review]:
         )
 
     return reviews
+
+
+def scrape_reviews(
+    appid: int,
+    session: requests.Session | None = None,
+    timeout: int | None = None,
+) -> list[Review]:
+    """Pobiera i parsuje stronę recenzji jednej gry."""
+    sess = session or requests.Session()
+    sess.headers.update({"User-Agent": INGESTION.user_agent})
+
+    try:
+        resp = sess.get(
+            REVIEWS_URL_TEMPLATE.format(appid=appid),
+            params={"browsefilter": "mostrecent", "p": 1},
+            timeout=timeout or INGESTION.http_timeout_seconds,
+        )
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        raise ReviewScrapingError(f"appid={appid}: {e}") from e
+
+    return parse_reviews_html(resp.text, appid)
+
+
+def scrape_many(
+    appids: list[int],
+    target_dir: Path | None = None,
+    rate_limit_seconds: float | None = None,
+    force: bool = False,
+) -> dict[int, str]:
+    """Scrapuje recenzje wielu gier. Zapisuje JSON-y w `{target_dir}/{appid}_reviews.json`.
+
+    Statusy: 'fetched', 'skipped', 'error'.
+    """
+    target_dir = target_dir or PATHS.scraped_dir
+    target_dir.mkdir(parents=True, exist_ok=True)
+    delay = (
+        rate_limit_seconds
+        if rate_limit_seconds is not None
+        else INGESTION.reviews_rate_limit_seconds
+    )
+
+    session = requests.Session()
+    session.headers.update({"User-Agent": INGESTION.user_agent})
+    statuses: dict[int, str] = {}
+
+    for appid in appids:
+        out = target_dir / f"{appid}_reviews.json"
+        if out.exists() and not force:
+            statuses[appid] = "skipped"
+            continue
+        try:
+            reviews = scrape_reviews(appid, session=session)
+        except ReviewScrapingError as e:
+            logger.error("appid=%s error: %s", appid, e)
+            statuses[appid] = "error"
+            time.sleep(delay)
+            continue
+
+        try:
+            out.write_text(
+                json.dumps([asdict(r) for r in reviews], ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            statuses[appid] = "fetched"
+        except OSError as e:
+            logger.error("appid=%s write error: %s", appid, e)
+            statuses[appid] = "error"
+        time.sleep(delay)
+
+    return statuses
