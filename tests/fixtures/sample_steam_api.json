@@ -1,0 +1,26 @@
+{
+  "70": {
+    "success": true,
+    "data": {
+      "name": "Half-Life",
+      "steam_appid": 70,
+      "is_free": false,
+      "developers": ["Valve"],
+      "publishers": ["Valve"],
+      "price_overview": {
+        "currency": "USD",
+        "initial": 999,
+        "final": 999,
+        "discount_percent": 0,
+        "final_formatted": "$9.99"
+      },
+      "platforms": {"windows": true, "mac": true, "linux": true},
+      "categories": [
+        {"id": 1, "description": "Multi-player"},
+        {"id": 2, "description": "Single-player"}
+      ],
+      "genres": [{"id": "1", "description": "Action"}],
+      "release_date": {"coming_soon": false, "date": "Nov 8, 1998"}
+    }
+  }
+}
