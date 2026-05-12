@@ -144,3 +144,18 @@ def test_fetch_many_records_errors_without_crashing(tmp_path: Path) -> None:
 
     assert statuses == {70: "error"}
     assert not (tmp_path / "70.json").exists()
+
+
+@responses.activate
+def test_fetch_many_handles_disk_write_error(tmp_path: Path) -> None:
+    responses.add(
+        responses.GET, STEAM_API_URL,
+        json={"70": {"success": True, "data": {"name": "Half-Life"}}}, status=200,
+    )
+
+    with patch.object(fetch_steam_api, "time") as mock_time, \
+         patch("pathlib.Path.write_text", side_effect=OSError("disk full")):
+        mock_time.sleep = lambda *_: None
+        statuses = fetch_many([70], target_dir=tmp_path, rate_limit_seconds=0)
+
+    assert statuses == {70: "error"}

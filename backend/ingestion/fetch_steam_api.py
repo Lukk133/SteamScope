@@ -90,12 +90,16 @@ def fetch_many(
             time.sleep(delay)
             continue
 
-        if data is None:
-            out.write_text(json.dumps({"_missing": True}), encoding="utf-8")
-            statuses[appid] = "missing"
-        else:
-            out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-            statuses[appid] = "fetched"
+        try:
+            if data is None:
+                out.write_text(json.dumps({"_missing": True}), encoding="utf-8")
+                statuses[appid] = "missing"
+            else:
+                out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+                statuses[appid] = "fetched"
+        except OSError as e:
+            logger.error("appid=%s write error: %s", appid, e)
+            statuses[appid] = "error"
         time.sleep(delay)
 
     return statuses
