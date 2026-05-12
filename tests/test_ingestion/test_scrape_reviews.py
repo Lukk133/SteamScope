@@ -137,3 +137,22 @@ def test_scrape_many_records_error(tmp_path: Path) -> None:
         statuses = scrape_many([70], target_dir=tmp_path, rate_limit_seconds=0)
     assert statuses == {70: "error"}
     assert not (tmp_path / "70_reviews.json").exists()
+
+
+@responses.activate
+def test_scrape_many_handles_disk_write_error(
+    tmp_path: Path, sample_reviews_html: str
+) -> None:
+    responses.add(
+        responses.GET,
+        REVIEWS_URL_TEMPLATE.format(appid=70),
+        body=sample_reviews_html,
+        status=200,
+    )
+
+    with patch.object(scraper_mod, "time") as mock_time, \
+         patch("pathlib.Path.write_text", side_effect=OSError("disk full")):
+        mock_time.sleep = lambda *_: None
+        statuses = scrape_many([70], target_dir=tmp_path, rate_limit_seconds=0)
+
+    assert statuses == {70: "error"}
