@@ -51,10 +51,13 @@ i analiza sentymentu recenzji (VADER).
 
 ```powershell
 python -m venv .venv
+# Jeśli aktywacja jest zablokowana przez PowerShell ExecutionPolicy:
+#   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 .venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 Copy-Item .env.example .env
-# uzupełnij KAGGLE_USERNAME i KAGGLE_KEY w .env (https://www.kaggle.com/settings/account → Create New Token)
+# Otwórz .env i zastąp KAGGLE_USERNAME / KAGGLE_KEY rzeczywistymi danymi
+# (token: https://www.kaggle.com/settings/account → Create New Token)
 ```
 
 ## Faza 1 — Ingestion
@@ -78,6 +81,8 @@ python -m scripts.run_ingestion --source reviews --appids 70,220,440,400
 ```
 
 ### Pełny przebieg
+
+Uwaga: `--appids` jest wymagany dla `--source all` (potrzebny dla kroków Steam / SteamSpy / Reviews).
 
 ```powershell
 python -m scripts.run_ingestion --source all --appids 70,220,440,400
