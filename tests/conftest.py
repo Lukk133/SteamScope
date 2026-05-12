@@ -3,6 +3,15 @@
 # czytają pliki z tests/fixtures/ tworzone w późniejszych zadaniach Fazy 1 (Task 4, 6, 7).
 from __future__ import annotations
 
+import os
+
+# Kaggle SDK does an auth check at module-import time. Tests mock the
+# SDK entirely, but the import itself must not crash on developer
+# machines without configured credentials. Set dummy values that the
+# SDK accepts at import; tests never invoke real authentication.
+os.environ.setdefault("KAGGLE_USERNAME", "test")
+os.environ.setdefault("KAGGLE_KEY", "test")
+
 import json
 from pathlib import Path
 
