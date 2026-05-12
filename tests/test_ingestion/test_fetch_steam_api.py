@@ -61,6 +61,19 @@ def test_raises_on_network_error() -> None:
 
 
 @responses.activate
+def test_raises_on_invalid_json() -> None:
+    responses.add(
+        responses.GET,
+        STEAM_API_URL,
+        body="<html>maintenance</html>",
+        status=200,
+        content_type="text/html",
+    )
+    with pytest.raises(SteamAPIError, match="invalid JSON"):
+        fetch_game_details(appid=70)
+
+
+@responses.activate
 def test_uses_configured_user_agent() -> None:
     responses.add(
         responses.GET,

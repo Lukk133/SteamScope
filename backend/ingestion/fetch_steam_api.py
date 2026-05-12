@@ -39,10 +39,11 @@ def fetch_game_details(
             timeout=timeout or INGESTION.http_timeout_seconds,
         )
         resp.raise_for_status()
+        payload = resp.json()
+    except requests.exceptions.JSONDecodeError as e:
+        raise SteamAPIError(f"appid={appid}: invalid JSON – {e}") from e
     except requests.RequestException as e:
         raise SteamAPIError(f"appid={appid}: {e}") from e
-
-    payload = resp.json()
     entry = payload.get(str(appid), {})
     if not entry.get("success"):
         logger.warning("Steam API success=false for appid %s", appid)
