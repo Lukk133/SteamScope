@@ -7,10 +7,6 @@ System analityczny umożliwiający eksplorację rynku gier na platformie Steam
 + shadcn-vue + ECharts). Rozszerzenie: predykcja ocen (Random Forest)
 i analiza sentymentu recenzji (VADER).
 
-## Status
-
-Wczesny etap projektu. Specyfikacja techniczna i etapowanie ustalone
-(dokument nie jest publiczny w repo). Implementacja w toku.
 
 ## Stos technologiczny
 
@@ -38,7 +34,7 @@ Wczesny etap projektu. Specyfikacja techniczna i etapowanie ustalone
 │   ├── processed/   # po ETL (gitignored)
 │   └── exports/     # CSV/XLSX wynikowe
 ├── db/              # SQLite (plik gitignored)
-├── src/
+├── backend/
 │   ├── ingestion/   # wczytywanie z 4 źródeł
 │   ├── etl/         # transformacje
 │   ├── warehouse/   # DDL star schemy + widoki SQL
@@ -50,8 +46,3 @@ Wczesny etap projektu. Specyfikacja techniczna i etapowanie ustalone
 ├── scripts/         # orkiestracja pipeline'u
 └── tests/
 ```
-
-## Uruchomienie
-
-Szczegóły uruchamiania zostaną dopisane w trakcie implementacji
-poszczególnych faz.
