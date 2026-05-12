@@ -120,7 +120,11 @@ def load_fact_games(conn: sqlite3.Connection, maps: dict[str, dict]) -> int:
 
 
 def load_bridges(conn: sqlite3.Connection, maps: dict[str, dict]) -> dict[str, int]:
-    """Ładuje bridge_game_genre i bridge_game_platform z stg_kaggle + stg_steam_api."""
+    """Ładuje bridge_game_genre i bridge_game_platform z stg_kaggle + stg_steam_api.
+
+    PRECONDITION: `fact_games` must already be populated — both bridge tables
+    have FK references to `fact_games(game_id)`. Call `load_fact_games` first.
+    """
     bg_count = 0
     sources = [("stg_kaggle", "genres"), ("stg_steam_api", "genres")]
     seen: set[tuple[int, int]] = set()
@@ -150,6 +154,7 @@ def load_bridges(conn: sqlite3.Connection, maps: dict[str, dict]) -> dict[str, i
                 bg_count += 1
 
     bp_count = 0
+    seen_platform: set[tuple[int, int]] = set()
     try:
         df = pd.read_sql("SELECT appid, windows, mac, linux FROM stg_kaggle", conn)
     except pd.errors.DatabaseError:
@@ -158,9 +163,13 @@ def load_bridges(conn: sqlite3.Connection, maps: dict[str, dict]) -> dict[str, i
         for platform_col, platform_name in (("windows", "Windows"), ("mac", "Mac"), ("linux", "Linux")):
             if int(r.get(platform_col) or 0) == 1:
                 pkey = maps["platform"][platform_name]
+                key = (int(r["appid"]), pkey)
+                if key in seen_platform:
+                    continue
+                seen_platform.add(key)
                 conn.execute(
                     "INSERT OR IGNORE INTO bridge_game_platform (game_id, platform_key) VALUES (?, ?)",
-                    (int(r["appid"]), pkey),
+                    key,
                 )
                 bp_count += 1
 

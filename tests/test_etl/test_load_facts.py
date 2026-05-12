@@ -132,3 +132,12 @@ def test_load_facts_idempotent(loaded_conn) -> None:
     reviews_after = pd.read_sql("SELECT COUNT(*) c FROM fact_reviews", loaded_conn).iloc[0]["c"]
     assert games_before == games_after
     assert reviews_before == reviews_after
+
+
+def test_load_bridges_count_stable_on_rerun(loaded_conn) -> None:
+    """Bridge counts must reflect unique pairs in current staging, not insert attempts."""
+    maps = load_all_dimensions(loaded_conn)
+    load_fact_games(loaded_conn, maps)
+    counts1 = load_bridges(loaded_conn, maps)
+    counts2 = load_bridges(loaded_conn, maps)
+    assert counts1 == counts2  # same staging → same counts
