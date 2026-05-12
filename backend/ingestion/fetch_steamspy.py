@@ -39,10 +39,11 @@ def fetch_app_details(
             timeout=timeout or INGESTION.http_timeout_seconds,
         )
         resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.JSONDecodeError as e:
+        raise SteamSpyError(f"appid={appid}: invalid JSON – {e}") from e
     except requests.RequestException as e:
         raise SteamSpyError(f"appid={appid}: {e}") from e
-
-    return resp.json()
 
 
 def fetch_many(
@@ -76,8 +77,12 @@ def fetch_many(
             statuses[appid] = "error"
             time.sleep(delay)
             continue
-        out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        statuses[appid] = "fetched"
+        try:
+            out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            statuses[appid] = "fetched"
+        except OSError as e:
+            logger.error("appid=%s write error: %s", appid, e)
+            statuses[appid] = "error"
         time.sleep(delay)
 
     return statuses

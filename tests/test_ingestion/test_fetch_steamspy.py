@@ -54,3 +54,32 @@ def test_fetch_many_records_error(tmp_path: Path) -> None:
         statuses = fetch_many([70], target_dir=tmp_path, rate_limit_seconds=0)
     assert statuses == {70: "error"}
     assert not (tmp_path / "70.json").exists()
+
+
+@responses.activate
+def test_fetch_app_details_raises_on_invalid_json() -> None:
+    responses.add(
+        responses.GET,
+        STEAMSPY_API_URL,
+        body="<html>maintenance</html>",
+        status=200,
+        content_type="text/html",
+    )
+    with pytest.raises(SteamSpyError, match="invalid JSON"):
+        fetch_app_details(appid=70)
+
+
+@responses.activate
+def test_fetch_many_handles_disk_write_error(
+    tmp_path: Path, sample_steamspy_payload: dict
+) -> None:
+    responses.add(
+        responses.GET, STEAMSPY_API_URL, json=sample_steamspy_payload, status=200,
+    )
+
+    with patch.object(fetch_steamspy, "time") as mock_time, \
+         patch("pathlib.Path.write_text", side_effect=OSError("disk full")):
+        mock_time.sleep = lambda *_: None
+        statuses = fetch_many([70], target_dir=tmp_path, rate_limit_seconds=0)
+
+    assert statuses == {70: "error"}
