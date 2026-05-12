@@ -1,0 +1,74 @@
+# Project-specific 
+wsad/
+docs/superpowers/
+
+# Dane
+data/raw/
+data/processed/
+*.parquet
+
+# Baza danych 
+db/*.db
+db/*.db-journal
+db/*.sqlite
+db/*.sqlite3
+
+# Modele ML
+src/ml/models/*.pkl
+src/ml/models/*.joblib
+
+# Logi
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/*-checkpoint.ipynb
+
+# Node / Vue / Vite (frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.turbo/
+frontend/*.log
+.npm/
+.pnpm-store/
+
+# Środowiskowe i sekrety
+.env
+.env.local
+.env.*.local
+*.secret
+secrets/
+
+# IDE / OS
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code / superpowers
+.claude/
