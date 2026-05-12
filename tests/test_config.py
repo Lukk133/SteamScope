@@ -1,6 +1,7 @@
 """Testy modułu konfiguracji."""
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 
 import pytest
@@ -36,7 +37,7 @@ def test_paths_ensure_creates_all_directories(tmp_path: Path) -> None:
 
 def test_paths_is_frozen(tmp_path: Path) -> None:
     paths = Paths(project_root=tmp_path)
-    with pytest.raises(Exception):  # FrozenInstanceError
+    with pytest.raises(dataclasses.FrozenInstanceError):
         paths.project_root = tmp_path  # type: ignore[misc]
 
 
@@ -47,6 +48,18 @@ def test_ingestion_config_defaults() -> None:
     assert cfg.steamspy_rate_limit_seconds >= 1.0
     assert cfg.steam_api_max_retries >= 1
     assert "SteamAnalytics" in cfg.user_agent
+
+
+def test_kaggle_dataset_id_reads_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KAGGLE_DATASET_ID", "owner/custom-dataset")
+    cfg = IngestionConfig()
+    assert cfg.kaggle_dataset_id == "owner/custom-dataset"
+
+
+def test_kaggle_dataset_id_default_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("KAGGLE_DATASET_ID", raising=False)
+    cfg = IngestionConfig()
+    assert cfg.kaggle_dataset_id == "fronkongames/steam-games-dataset"
 
 
 def test_module_level_singletons_exist() -> None:
