@@ -1,4 +1,4 @@
-# Steam Analytics — projekt zaliczeniowy Big Data
+# Steam Analytics
 
 System analityczny umożliwiający eksplorację rynku gier na platformie Steam
 (~100 tys. tytułów). Pełen pipeline: ingestion z 4 źródeł (CSV/JSON/HTML)
