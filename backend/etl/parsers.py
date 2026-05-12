@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any
 
 _PRICE_BUCKETS: list[tuple[float, float | None, str]] = [
-    (0.01, 4.99, "$0.01-4.99"),
+    (0.001, 4.99, "$0.01-4.99"),
     (5.00, 14.99, "$5-14.99"),
     (15.00, 29.99, "$15-29.99"),
     (30.00, 59.99, "$30-59.99"),

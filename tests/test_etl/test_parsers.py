@@ -12,7 +12,6 @@ from backend.etl.parsers import (
     release_date_to_period,
 )
 
-
 # parse_owners_range -----------------------------------------------------------
 
 @pytest.mark.parametrize(
@@ -60,6 +59,11 @@ def test_price_to_range_label_handles_nan() -> None:
     assert price_to_range_label(math.nan) == "Free"
 
 
+def test_price_to_range_label_handles_sub_cent() -> None:
+    # Sub-cent positive prices are placed in the smallest non-free bucket.
+    assert price_to_range_label(0.005) == "$0.01-4.99"
+
+
 # classify_developer -----------------------------------------------------------
 
 @pytest.mark.parametrize(
@@ -77,9 +81,10 @@ def test_classify_developer(count: int, expected: str) -> None:
     assert classify_developer(count) == expected
 
 
-def test_classify_developer_invalid_count_raises() -> None:
+@pytest.mark.parametrize("invalid", [0, -1, -100])
+def test_classify_developer_invalid_count_raises(invalid: int) -> None:
     with pytest.raises(ValueError):
-        classify_developer(0)
+        classify_developer(invalid)
 
 
 # release_date_to_period -------------------------------------------------------
@@ -119,3 +124,19 @@ def test_release_date_to_period_returns_none_on_garbage() -> None:
     assert release_date_to_period("not a date") is None
     assert release_date_to_period(None) is None
     assert release_date_to_period("") is None
+
+
+def test_release_date_to_period_reverse_steam_format() -> None:
+    p = release_date_to_period("8 Nov, 1998")
+    assert p == {
+        "year": 1998,
+        "quarter": 4,
+        "month": 11,
+        "month_name": "November",
+        "season": "Autumn",
+    }
+
+
+@pytest.mark.parametrize("non_str", [42, 3.14, [], {}, True])
+def test_release_date_to_period_handles_non_string(non_str) -> None:
+    assert release_date_to_period(non_str) is None
