@@ -24,11 +24,29 @@ def _truthy_to_int(series: pd.Series) -> pd.Series:
     return series.fillna(False).astype(bool).astype(int)
 
 
+_KAGGLE_EMPTY_COLUMNS = [
+    "appid", "name", "price", "genres", "developers", "release_date",
+    "windows", "mac", "linux",
+]
+
+_STEAM_API_EMPTY_COLUMNS = [
+    "appid", "name", "is_free", "developers", "publishers", "price_usd",
+    "windows", "mac", "linux", "categories", "genres", "release_date",
+]
+
+_STEAMSPY_EMPTY_COLUMNS = [
+    "appid", "name", "developer", "estimated_owners", "average_forever_minutes",
+    "price_cents", "positive", "negative",
+]
+
+
 def stage_kaggle(csv_path: Path, conn: sqlite3.Connection) -> int:
     """Ładuje Kaggle CSV do `stg_kaggle`. Zwraca liczbę wierszy."""
     if not csv_path.exists():
         logger.warning("Kaggle CSV not found at %s — staging 0 rows", csv_path)
-        pd.DataFrame().to_sql("stg_kaggle", conn, if_exists="replace", index=False)
+        pd.DataFrame(columns=_KAGGLE_EMPTY_COLUMNS).to_sql(
+            "stg_kaggle", conn, if_exists="replace", index=False
+        )
         conn.commit()
         return 0
 
@@ -85,7 +103,7 @@ def stage_steam_api(source_dir: Path, conn: sqlite3.Connection) -> int:
                 ),
                 "release_date": (data.get("release_date") or {}).get("date"),
             })
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows) if rows else pd.DataFrame(columns=_STEAM_API_EMPTY_COLUMNS)
     df.to_sql("stg_steam_api", conn, if_exists="replace", index=False)
     conn.commit()
     return len(df)
@@ -117,7 +135,7 @@ def stage_steamspy(source_dir: Path, conn: sqlite3.Connection) -> int:
                 "positive": data.get("positive"),
                 "negative": data.get("negative"),
             })
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows) if rows else pd.DataFrame(columns=_STEAMSPY_EMPTY_COLUMNS)
     df.to_sql("stg_steamspy", conn, if_exists="replace", index=False)
     conn.commit()
     return len(df)

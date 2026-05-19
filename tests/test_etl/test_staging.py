@@ -123,3 +123,27 @@ def test_stage_reviews_skips_review_without_appid(tmp_path: Path, conn) -> None:
     # File stem 'abc' is not a digit → no fallback appid → review is skipped.
     rows = stage_reviews(source, conn)
     assert rows == 0
+
+
+def test_stage_kaggle_missing_csv_creates_empty_table(tmp_path: Path, conn) -> None:
+    rows = stage_kaggle(tmp_path / "nope.csv", conn)
+    assert rows == 0
+    df = pd.read_sql("SELECT * FROM stg_kaggle", conn)
+    assert len(df) == 0
+    assert {"appid", "genres", "developers", "release_date"}.issubset(df.columns)
+
+
+def test_stage_steam_api_missing_dir_creates_empty_table(tmp_path: Path, conn) -> None:
+    rows = stage_steam_api(tmp_path / "nope", conn)
+    assert rows == 0
+    df = pd.read_sql("SELECT * FROM stg_steam_api", conn)
+    assert len(df) == 0
+    assert {"appid", "genres", "release_date"}.issubset(df.columns)
+
+
+def test_stage_steamspy_missing_dir_creates_empty_table(tmp_path: Path, conn) -> None:
+    rows = stage_steamspy(tmp_path / "nope", conn)
+    assert rows == 0
+    df = pd.read_sql("SELECT * FROM stg_steamspy", conn)
+    assert len(df) == 0
+    assert {"appid", "estimated_owners", "positive", "negative"}.issubset(df.columns)
