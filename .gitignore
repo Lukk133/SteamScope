@@ -12,7 +12,7 @@ db/*.db
 db/*.db-journal
 db/*.sqlite
 db/*.sqlite3
-
+data/
 # Modele ML
 backend/ml/models/*.pkl
 backend/ml/models/*.joblib
