@@ -10,7 +10,7 @@ import sqlite3
 
 import pandas as pd
 
-from backend.etl.parsers import price_to_range_label, release_date_to_period
+from backend.etl.parsers import parse_review_date, price_to_range_label, release_date_to_period
 from backend.etl.sentiment import aggregate_per_game, compound_to_label, score_review
 
 logger = logging.getLogger(__name__)
@@ -191,13 +191,16 @@ def load_fact_reviews(conn: sqlite3.Connection, maps: dict[str, dict]) -> int:
         return 0
     rows: list[tuple] = []
     sentiment_map = maps["sentiment"]
+    date_map = maps.get("date", {})
     for _, r in df.iterrows():
         compound = score_review(r.get("review_text"))
         label = compound_to_label(compound)
+        iso_date = parse_review_date(r.get("posted_date"))
+        review_date_key = date_map.get(iso_date) if iso_date else None
         rows.append((
             _review_id(int(r["appid"]), r.get("author"), r.get("posted_date")),
             int(r["appid"]),
-            None,  # review_date_key — Phase 3 will build dim_date
+            review_date_key,
             compound,
             sentiment_map.get(label),
             int(r["helpful_count"]) if pd.notna(r.get("helpful_count")) else None,

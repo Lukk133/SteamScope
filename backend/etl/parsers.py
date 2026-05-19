@@ -100,3 +100,31 @@ def release_date_to_period(raw: Any) -> dict | None:
         "month_name": _MONTH_NAMES[dt.month - 1],
         "season": _SEASONS_BY_MONTH[dt.month],
     }
+
+
+def parse_review_date(raw: Any) -> str | None:
+    """Parsuje datę publikacji recenzji do formatu ISO `YYYY-MM-DD`.
+
+    Obsługuje formaty Steam Community ('Posted: Nov 8, 2023', 'Nov 8, 2023'),
+    pełne ('November 8, 2023') oraz ISO (2023-11-08). Zwraca None gdy data
+    jest pusta, nie jest stringiem albo nie da się sparsować.
+
+    Uwaga: starsze recenzje Steam mogą nie zawierać roku (np. 'Posted: Nov 8') —
+    takie wejście zwraca None, ponieważ dim_date wymaga pełnej daty.
+    """
+    if raw is None or not isinstance(raw, str):
+        return None
+    text = raw.strip()
+    if not text:
+        return None
+    if text.lower().startswith("posted:"):
+        text = text.split(":", 1)[1].strip()
+    if not text:
+        return None
+    for fmt in _DATE_FORMATS:
+        try:
+            dt = datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+        return dt.strftime("%Y-%m-%d")
+    return None

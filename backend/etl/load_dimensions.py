@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from datetime import datetime
 
 import pandas as pd
 
-from backend.etl.parsers import classify_developer, release_date_to_period
+from backend.etl.parsers import classify_developer, parse_review_date, release_date_to_period
 from backend.etl.sentiment import SENTIMENT_BUCKETS
 
 logger = logging.getLogger(__name__)
@@ -138,10 +139,53 @@ def _load_dim_release_period(conn: sqlite3.Connection) -> dict[tuple[int, int], 
     return {(int(y), int(m)): int(k) for y, m, k in cur.fetchall()}
 
 
+def _load_dim_date(conn: sqlite3.Connection) -> dict[str, int]:
+    """Ładuje dim_date z unikalnych dat publikacji recenzji w stg_reviews.
+
+    Klucz surogatowy `date_key` w formacie YYYYMMDD (konwencja hurtowni danych).
+    Zwraca mapę ISO `YYYY-MM-DD` → date_key. Niesparsowalne wartości są pomijane.
+    """
+    try:
+        df = pd.read_sql(
+            "SELECT DISTINCT posted_date FROM stg_reviews WHERE posted_date IS NOT NULL",
+            conn,
+        )
+    except pd.errors.DatabaseError:
+        df = pd.DataFrame(columns=["posted_date"])
+
+    seen_iso: set[str] = set()
+    for raw in df["posted_date"]:
+        iso = parse_review_date(raw)
+        if iso is None or iso in seen_iso:
+            continue
+        seen_iso.add(iso)
+        dt = datetime.strptime(iso, "%Y-%m-%d")
+        date_key = dt.year * 10000 + dt.month * 100 + dt.day
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO dim_date
+                (date_key, date, year, quarter, month, day, day_of_week)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                date_key,
+                iso,
+                dt.year,
+                (dt.month - 1) // 3 + 1,
+                dt.month,
+                dt.day,
+                dt.weekday(),
+            ),
+        )
+    conn.commit()
+    return {d: int(k) for d, k in conn.execute("SELECT date, date_key FROM dim_date").fetchall()}
+
+
 def load_all_dimensions(conn: sqlite3.Connection) -> dict[str, dict]:
     """Ładuje wszystkie wymiary i zwraca słownik lookup-map.
 
-    Klucze: 'genre', 'developer', 'platform', 'price_range', 'release_period', 'sentiment'.
+    Klucze: 'genre', 'developer', 'platform', 'price_range', 'release_period',
+    'sentiment', 'date'.
     """
     return {
         "genre": _load_dim_genre(conn),
@@ -150,4 +194,5 @@ def load_all_dimensions(conn: sqlite3.Connection) -> dict[str, dict]:
         "price_range": _load_dim_price_range(conn),
         "release_period": _load_dim_release_period(conn),
         "sentiment": _load_dim_sentiment(conn),
+        "date": _load_dim_date(conn),
     }
