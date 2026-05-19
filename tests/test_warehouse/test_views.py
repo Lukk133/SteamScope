@@ -74,7 +74,7 @@ def test_vw_monthly_releases_returns_ordered_periods(views_conn) -> None:
 
 
 def test_init_views_is_idempotent(views_conn) -> None:
-    # Drugie wywołanie nie powinno rzucać błędu (CREATE VIEW IF NOT EXISTS).
+    # Drugie wywołanie nie powinno rzucać błędu (DROP + CREATE).
     init_views(views_conn)
     init_views(views_conn)
     # Widoki nadal istnieją.
@@ -93,3 +93,28 @@ def test_init_views_is_idempotent(views_conn) -> None:
         "vw_monthly_releases",
     }
     assert expected.issubset(names)
+
+
+def test_init_views_refreshes_definition_on_change(views_conn) -> None:
+    # Symulujemy lokalną podmianę definicji widoku (np. ręczną edycję
+    # w trakcie developmentu) i sprawdzamy, że init_views przywraca
+    # kanoniczną definicję z views.sql, a nie zachowuje "starej" wersji.
+    views_conn.executescript(
+        """
+        DROP VIEW vw_genre_stats;
+        CREATE VIEW vw_genre_stats AS SELECT 999 AS sentinel;
+        """
+    )
+    views_conn.commit()
+
+    # Sanity check: widok ma teraz fałszywą definicję z kolumną `sentinel`.
+    fake_cols = {row[1] for row in views_conn.execute("PRAGMA table_info(vw_genre_stats)")}
+    assert fake_cols == {"sentinel"}
+
+    # Ponowne uruchomienie init_views powinno odtworzyć widok od zera.
+    init_views(views_conn)
+
+    cols = {row[1] for row in views_conn.execute("PRAGMA table_info(vw_genre_stats)")}
+    # Sentinel zniknął — widok wrócił do kanonicznych kolumn z views.sql.
+    assert "sentinel" not in cols
+    assert {"genre", "games_count", "avg_rating"}.issubset(cols)

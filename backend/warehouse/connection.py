@@ -31,7 +31,11 @@ def init_schema(conn: sqlite3.Connection) -> None:
 
 
 def init_views(conn: sqlite3.Connection) -> None:
-    """Tworzy analityczne widoki warstwy wynikowej. Idempotentne (IF NOT EXISTS)."""
+    """Tworzy analityczne widoki warstwy wynikowej.
+
+    Idempotentne — każde wywołanie odtwarza widoki od zera (DROP + CREATE),
+    więc bezpiecznie aktualizuje się po zmianie definicji w views.sql.
+    """
     sql = _VIEWS_PATH.read_text(encoding="utf-8")
     conn.executescript(sql)
     conn.commit()
