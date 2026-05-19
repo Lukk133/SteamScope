@@ -8,6 +8,7 @@ import pytest
 from backend.etl.parsers import (
     classify_developer,
     parse_owners_range,
+    parse_review_date,
     price_to_range_label,
     release_date_to_period,
 )
@@ -140,3 +141,34 @@ def test_release_date_to_period_reverse_steam_format() -> None:
 @pytest.mark.parametrize("non_str", [42, 3.14, [], {}, True])
 def test_release_date_to_period_handles_non_string(non_str) -> None:
     assert release_date_to_period(non_str) is None
+
+
+# parse_review_date ------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("2024-03-15", "2024-03-15"),
+        ("Nov 8, 2023", "2023-11-08"),
+        ("November 8, 2023", "2023-11-08"),
+        ("8 Nov, 2023", "2023-11-08"),
+        # Steam Community "Posted: …" prefix used by scrape_reviews
+        ("Posted: March 1, 2024", "2024-03-01"),
+        ("Posted: Nov 8, 2023", "2023-11-08"),
+        ("Posted: January 15, 2024", "2024-01-15"),
+        # tolerate whitespace
+        ("  Posted:  Feb 20, 2024  ", "2024-02-20"),
+    ],
+)
+def test_parse_review_date_accepts_known_formats(raw: str, expected: str) -> None:
+    assert parse_review_date(raw) == expected
+
+
+@pytest.mark.parametrize("raw", [None, "", "   ", "not a date", "Posted:", "Posted: Nov 8"])
+def test_parse_review_date_returns_none_on_unparsable(raw) -> None:
+    assert parse_review_date(raw) is None
+
+
+@pytest.mark.parametrize("non_str", [42, 3.14, [], {}, True])
+def test_parse_review_date_handles_non_string(non_str) -> None:
+    assert parse_review_date(non_str) is None

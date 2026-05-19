@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from backend.etl.load_dimensions import load_all_dimensions
-from backend.etl.staging import stage_kaggle, stage_steam_api, stage_steamspy
+from backend.etl.staging import stage_kaggle, stage_reviews, stage_steam_api, stage_steamspy
 from backend.warehouse.connection import connect, init_schema
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
@@ -20,6 +20,7 @@ def populated_conn(tmp_path):
     stage_kaggle(FIXTURES / "etl_sample_kaggle.csv", conn)
     stage_steam_api(FIXTURES / "etl_sample_steam_api", conn)
     stage_steamspy(FIXTURES / "etl_sample_steamspy", conn)
+    stage_reviews(FIXTURES / "etl_sample_reviews", conn)
     yield conn
     conn.close()
 
@@ -28,7 +29,7 @@ def test_load_returns_lookup_maps(populated_conn) -> None:
     maps = load_all_dimensions(populated_conn)
     assert set(maps.keys()) == {
         "genre", "developer", "platform", "price_range",
-        "release_period", "sentiment",
+        "release_period", "sentiment", "date",
     }
 
 
@@ -90,6 +91,53 @@ def test_load_is_idempotent(populated_conn) -> None:
     assert rows_before == rows_after
     maps2 = load_all_dimensions(populated_conn)
     assert maps1["genre"] == maps2["genre"]
+
+
+def test_dim_date_populated_from_review_posted_dates(populated_conn) -> None:
+    """dim_date should contain a row per unique parsable posted_date in stg_reviews."""
+    maps = load_all_dimensions(populated_conn)
+    df = pd.read_sql(
+        "SELECT date_key, date, year, month, day, day_of_week, quarter "
+        "FROM dim_date ORDER BY date",
+        populated_conn,
+    )
+    # Fixtures use posted_date values: Jan 15 / Feb 20 / Mar 1 / Mar 10 (all 2024)
+    assert set(df["date"]) == {"2024-01-15", "2024-02-20", "2024-03-01", "2024-03-10"}
+    jan15 = df[df["date"] == "2024-01-15"].iloc[0]
+    assert int(jan15["date_key"]) == 20240115
+    assert int(jan15["year"]) == 2024
+    assert int(jan15["month"]) == 1
+    assert int(jan15["day"]) == 15
+    assert int(jan15["quarter"]) == 1
+    assert int(jan15["day_of_week"]) == 0  # 2024-01-15 was a Monday
+    # Lookup map keyed by ISO date string → date_key int
+    assert maps["date"]["2024-01-15"] == 20240115
+    assert maps["date"]["2024-03-10"] == 20240310
+
+
+def test_dim_date_idempotent_on_rerun(populated_conn) -> None:
+    """Re-running the loader must not duplicate dim_date rows."""
+    maps1 = load_all_dimensions(populated_conn)
+    rows_before = pd.read_sql(
+        "SELECT COUNT(*) c FROM dim_date", populated_conn
+    ).iloc[0]["c"]
+    maps2 = load_all_dimensions(populated_conn)
+    rows_after = pd.read_sql(
+        "SELECT COUNT(*) c FROM dim_date", populated_conn
+    ).iloc[0]["c"]
+    assert rows_before == rows_after
+    assert maps1["date"] == maps2["date"]
+
+
+def test_dim_date_empty_when_no_reviews(tmp_path) -> None:
+    """Loader must not fail when stg_reviews has no rows or doesn't exist."""
+    conn = connect(tmp_path / "test.db")
+    init_schema(conn)
+    maps = load_all_dimensions(conn)
+    assert maps["date"] == {}
+    rows = pd.read_sql("SELECT COUNT(*) c FROM dim_date", conn).iloc[0]["c"]
+    assert rows == 0
+    conn.close()
 
 
 def test_dim_developer_upsert_refreshes_counts(tmp_path) -> None:

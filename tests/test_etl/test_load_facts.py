@@ -116,6 +116,43 @@ def test_load_fact_reviews_inserts_rows(loaded_conn) -> None:
     assert positive["sentiment_score"] > 0
 
 
+def test_load_fact_reviews_sets_review_date_key(loaded_conn) -> None:
+    """review_date_key must resolve via dim_date for parsable posted_date values."""
+    maps = load_all_dimensions(loaded_conn)
+    load_fact_games(loaded_conn, maps)
+    load_fact_reviews(loaded_conn, maps)
+    # Every fixture review has a parsable Steam-format date — none should be NULL.
+    df = pd.read_sql(
+        "SELECT review_date_key FROM fact_reviews", loaded_conn
+    )
+    assert df["review_date_key"].notna().all()
+    # FK join into dim_date must succeed for every row.
+    joined = pd.read_sql(
+        """
+        SELECT f.review_id, d.date, d.year, d.month, d.day
+        FROM fact_reviews f
+        JOIN dim_date d ON f.review_date_key = d.date_key
+        ORDER BY d.date
+        """,
+        loaded_conn,
+    )
+    assert len(joined) == 4
+    assert set(joined["date"]) == {
+        "2024-01-15", "2024-02-20", "2024-03-01", "2024-03-10",
+    }
+    # Spot check: appid 220's "Posted: March 10, 2024" → date_key 20240310
+    march10 = pd.read_sql(
+        """
+        SELECT f.review_date_key
+        FROM fact_reviews f
+        JOIN dim_date d ON f.review_date_key = d.date_key
+        WHERE f.game_id = 220 AND d.date = '2024-03-10'
+        """,
+        loaded_conn,
+    )
+    assert int(march10.iloc[0]["review_date_key"]) == 20240310
+
+
 def test_load_facts_idempotent(loaded_conn) -> None:
     maps = load_all_dimensions(loaded_conn)
     load_fact_games(loaded_conn, maps)
