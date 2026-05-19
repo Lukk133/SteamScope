@@ -98,6 +98,55 @@ python -m scripts.run_ingestion --source steam --appids 70 --force
 
 Każde uruchomienie zapisuje log do `logs/ingestion.log` (plik gitignorowany).
 
+## Faza 2 — ETL
+
+Pipeline ETL ładuje dane z `data/raw/` do hurtowni SQLite w schemacie gwiazdy (`db/steam_warehouse.db`). Uruchomienie sterowane jest flagą `--step`:
+
+- `schema` — tworzy DDL hurtowni (tabele wymiarów, faktów i bridge).
+- `staging` — wczytuje surowe pliki Kaggle/Steam API/SteamSpy/Reviews do tabel `stg_*`.
+- `dimensions` — ładuje wymiary (`dim_genre`, `dim_developer`, `dim_platform`, `dim_price_range`, `dim_release_period`, `dim_sentiment`, `dim_date`).
+- `facts` — ładuje `fact_games`, `fact_reviews` oraz tabele `bridge_*`.
+- `all` — pełny przebieg (schema → staging → dimensions → facts).
+
+```powershell
+python -m scripts.run_etl --step all
+```
+
+Pipeline jest idempotentny — ponowne uruchomienie aktualizuje hurtownię bez duplikatów. Log uruchomienia trafia do `logs/etl.log`.
+
+## Faza 3 — Warstwa wynikowa
+
+Warstwa wynikowa udostępnia analityczne widoki SQL nad hurtownią oraz eksporty CSV/XLSX do `data/exports/` dla narzędzi BI i dashboardu.
+
+| Widok | Opis |
+|---|---|
+| `vw_top_rated_games` | Ranking gier z co najmniej 10 recenzjami, posortowany malejąco po `rating_score`. |
+| `vw_genre_stats` | Statystyki per gatunek (liczba gier, średnia ocena, średnia cena, średnia liczba właścicieli). |
+| `vw_developer_leaderboard` | Liderzy wśród deweloperów wg szacunkowego przychodu, z klasą (indie/AA/AAA). |
+| `vw_price_range_distribution` | Rozkład gier po przedziałach cenowych. |
+| `vw_sentiment_per_genre` | Rozkład sentymentu (na podstawie recenzji) per gatunek. |
+| `vw_monthly_releases` | Liczba premier per rok/miesiąc wraz ze średnią oceną. |
+
+```powershell
+# tworzy widoki w hurtowni
+python -m scripts.run_analytics --step views
+
+# eksport każdego widoku do osobnego pliku CSV (data/exports/csv/)
+python -m scripts.run_analytics --step export-csv
+
+# eksport wszystkich widoków do jednego XLSX (data/exports/steam_analytics.xlsx)
+# — każdy widok jako osobny arkusz
+python -m scripts.run_analytics --step export-xlsx
+
+# pełny przebieg: widoki + CSV + XLSX
+python -m scripts.run_analytics --step all
+
+# opcjonalnie: zmień katalog wyjściowy
+python -m scripts.run_analytics --step all --out-dir D:\reports\steam
+```
+
+Warstwa jest idempotentna — można uruchamiać wielokrotnie. Log uruchomienia trafia do `logs/analytics.log`.
+
 ## Testy
 
 ```powershell
