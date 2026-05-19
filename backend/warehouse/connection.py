@@ -11,6 +11,7 @@ from pathlib import Path
 from backend.config import PATHS
 
 _SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
+_VIEWS_PATH = Path(__file__).resolve().parent / "views.sql"
 
 
 def connect(db_path: Path | None = None) -> sqlite3.Connection:
@@ -25,5 +26,12 @@ def connect(db_path: Path | None = None) -> sqlite3.Connection:
 def init_schema(conn: sqlite3.Connection) -> None:
     """Wykonuje pełne DDL schematu gwiazdy. Idempotentne (IF NOT EXISTS)."""
     sql = _SCHEMA_PATH.read_text(encoding="utf-8")
+    conn.executescript(sql)
+    conn.commit()
+
+
+def init_views(conn: sqlite3.Connection) -> None:
+    """Tworzy analityczne widoki warstwy wynikowej. Idempotentne (IF NOT EXISTS)."""
+    sql = _VIEWS_PATH.read_text(encoding="utf-8")
     conn.executescript(sql)
     conn.commit()
