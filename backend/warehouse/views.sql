@@ -92,3 +92,16 @@ FROM fact_games f
 JOIN dim_release_period rp ON f.release_period_key = rp.release_period_key
 GROUP BY rp.year, rp.month, rp.month_name, rp.season
 ORDER BY rp.year ASC, rp.month ASC;
+
+-- Jednowierszowy agregat KPI dla nagłówka dashboardu.
+DROP VIEW IF EXISTS vw_overview;
+CREATE VIEW vw_overview AS
+SELECT
+    (SELECT COUNT(*)                    FROM fact_games)    AS total_games,
+    (SELECT COUNT(*)                    FROM dim_developer) AS total_developers,
+    (SELECT COUNT(*)                    FROM dim_genre)     AS total_genres,
+    (SELECT AVG(rating_score)           FROM fact_games)    AS avg_rating,
+    (SELECT AVG(price_usd)              FROM fact_games)    AS avg_price_usd,
+    (SELECT SUM(estimated_owners)       FROM fact_games)    AS total_estimated_owners,
+    (SELECT SUM(review_count)           FROM fact_games)    AS total_reviews,
+    (SELECT SUM(estimated_revenue_usd)  FROM fact_games)    AS total_estimated_revenue_usd;

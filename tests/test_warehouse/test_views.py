@@ -95,6 +95,25 @@ def test_init_views_is_idempotent(views_conn) -> None:
     assert expected.issubset(names)
 
 
+def test_vw_overview_returns_single_row_with_kpis(views_conn) -> None:
+    df = pd.read_sql("SELECT * FROM vw_overview", views_conn)
+    assert len(df) == 1
+    expected_cols = {
+        "total_games",
+        "total_developers",
+        "total_genres",
+        "avg_rating",
+        "avg_price_usd",
+        "total_estimated_owners",
+        "total_reviews",
+        "total_estimated_revenue_usd",
+    }
+    assert expected_cols.issubset(set(df.columns))
+    # Hurtownia z fixture ma co najmniej jedną grę i jeden gatunek.
+    assert int(df["total_games"].iloc[0]) >= 1
+    assert int(df["total_genres"].iloc[0]) >= 1
+
+
 def test_init_views_refreshes_definition_on_change(views_conn) -> None:
     # Symulujemy lokalną podmianę definicji widoku (np. ręczną edycję
     # w trakcie developmentu) i sprawdzamy, że init_views przywraca
