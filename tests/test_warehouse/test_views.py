@@ -91,8 +91,41 @@ def test_init_views_is_idempotent(views_conn) -> None:
         "vw_price_range_distribution",
         "vw_sentiment_per_genre",
         "vw_monthly_releases",
+        "vw_overview",
+        "vw_game_detail",
     }
     assert expected.issubset(names)
+
+
+def test_vw_game_detail_has_expected_columns_and_joins(views_conn) -> None:
+    df = pd.read_sql("SELECT * FROM vw_game_detail", views_conn)
+    expected_cols = {
+        "game_id",
+        "name",
+        "genre",
+        "developer",
+        "developer_class",
+        "price_range_label",
+        "release_year",
+        "release_month",
+        "release_month_name",
+        "season",
+        "sentiment_label",
+        "price_usd",
+        "rating_score",
+        "review_count",
+        "positive_review_count",
+        "negative_review_count",
+        "estimated_owners",
+        "estimated_revenue_usd",
+        "release_date",
+        "playtime_avg_hours",
+    }
+    assert expected_cols.issubset(set(df.columns))
+    # Tyle wierszy, ile gier w fact_games (LEFT JOIN nie multiplikuje).
+    total = int(views_conn.execute("SELECT COUNT(*) FROM fact_games").fetchone()[0])
+    assert len(df) == total
+    assert df["name"].notna().all()
 
 
 def test_vw_overview_returns_single_row_with_kpis(views_conn) -> None:

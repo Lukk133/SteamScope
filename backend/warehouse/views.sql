@@ -105,3 +105,35 @@ SELECT
     (SELECT SUM(estimated_owners)       FROM fact_games)    AS total_estimated_owners,
     (SELECT SUM(review_count)           FROM fact_games)    AS total_reviews,
     (SELECT SUM(estimated_revenue_usd)  FROM fact_games)    AS total_estimated_revenue_usd;
+
+-- Pełny rekord gry: fact_games złączony ze wszystkimi wymiarami.
+-- LEFT JOIN — brak wymiaru nie usuwa gry z wyniku.
+DROP VIEW IF EXISTS vw_game_detail;
+CREATE VIEW vw_game_detail AS
+SELECT
+    f.game_id,
+    f.name,
+    g.name             AS genre,
+    d.name             AS developer,
+    d.developer_class  AS developer_class,
+    pr.label           AS price_range_label,
+    rp.year            AS release_year,
+    rp.month           AS release_month,
+    rp.month_name      AS release_month_name,
+    rp.season          AS season,
+    s.label            AS sentiment_label,
+    f.price_usd,
+    f.rating_score,
+    f.review_count,
+    f.positive_review_count,
+    f.negative_review_count,
+    f.estimated_owners,
+    f.estimated_revenue_usd,
+    f.release_date,
+    f.playtime_avg_hours
+FROM fact_games f
+LEFT JOIN dim_genre          g  ON f.genre_key          = g.genre_key
+LEFT JOIN dim_developer      d  ON f.developer_key      = d.developer_key
+LEFT JOIN dim_price_range    pr ON f.price_range_key    = pr.price_range_key
+LEFT JOIN dim_release_period rp ON f.release_period_key = rp.release_period_key
+LEFT JOIN dim_sentiment      s  ON f.sentiment_key      = s.sentiment_key;
