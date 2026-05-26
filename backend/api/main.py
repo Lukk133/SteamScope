@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.api.routers import games as games_router
 from backend.api.routers import overview as overview_router
 from backend.api.routers import views as views_router
 
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
 
     app.include_router(views_router.router)
     app.include_router(overview_router.router)
+    app.include_router(games_router.router)
 
     @app.get("/")
     def root() -> dict[str, str]:
