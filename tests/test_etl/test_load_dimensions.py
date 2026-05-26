@@ -78,7 +78,7 @@ def test_dim_sentiment_has_five_rows(populated_conn) -> None:
 def test_dim_release_period_built_from_games(populated_conn) -> None:
     load_all_dimensions(populated_conn)
     df = pd.read_sql("SELECT year, month, season FROM dim_release_period", populated_conn)
-    pairs = sorted({(int(y), int(m)) for y, m in zip(df["year"], df["month"])})
+    pairs = sorted({(int(y), int(m)) for y, m in zip(df["year"], df["month"], strict=True)})
     assert (1998, 11) in pairs
     assert (2007, 10) in pairs
 

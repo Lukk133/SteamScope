@@ -53,7 +53,7 @@ def test_sentiment_buckets_cover_full_range() -> None:
     sorted_buckets = sorted(SENTIMENT_BUCKETS, key=lambda b: b["score_min"])
     assert sorted_buckets[0]["score_min"] == -1.0
     assert sorted_buckets[-1]["score_max"] == 1.0
-    for prev, nxt in zip(sorted_buckets, sorted_buckets[1:]):
+    for prev, nxt in zip(sorted_buckets, sorted_buckets[1:], strict=False):
         assert prev["score_max"] == nxt["score_min"]
 
 

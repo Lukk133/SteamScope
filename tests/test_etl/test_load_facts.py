@@ -9,7 +9,10 @@ import pytest
 from backend.etl.load_dimensions import load_all_dimensions
 from backend.etl.load_facts import load_bridges, load_fact_games, load_fact_reviews
 from backend.etl.staging import (
-    stage_kaggle, stage_reviews, stage_steam_api, stage_steamspy,
+    stage_kaggle,
+    stage_reviews,
+    stage_steam_api,
+    stage_steamspy,
 )
 from backend.warehouse.connection import connect, init_schema
 
@@ -78,7 +81,7 @@ def test_load_fact_games_resolves_price_range(loaded_conn) -> None:
         """,
         loaded_conn,
     )
-    labels = dict(zip(df["game_id"], df["label"]))
+    labels = dict(zip(df["game_id"], df["label"], strict=True))
     assert labels[70] == "$5-14.99"   # $9.99
     assert labels[440] == "Free"      # $0
     assert labels[9999998] == "$0.01-4.99"  # $4.99

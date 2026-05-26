@@ -147,6 +147,32 @@ python -m scripts.run_analytics --step all --out-dir D:\reports\steam
 
 Warstwa jest idempotentna — można uruchamiać wielokrotnie. Log uruchomienia trafia do `logs/analytics.log`.
 
+## Faza 4 — API (FastAPI)
+
+REST API udostępnia warstwę wynikową hurtowni. Uruchomienie serwera dev:
+
+```powershell
+uvicorn backend.api.main:app --reload --port 8000
+```
+
+Dokumentacja interaktywna: `http://localhost:8000/docs`.
+
+| Endpoint | Opis |
+|---|---|
+| `GET /` | Metadane aplikacji (odsyła do `/docs`). |
+| `GET /api/health` | Status zdrowia (monitoring/smoke-test). |
+| `GET /api/overview` | Zbiorcze KPI (liczba gier, deweloperów, śr. ocena, przychód…). |
+| `GET /api/games?q=&limit=&offset=` | Lista/wyszukiwanie gier (filtr po nazwie, paginacja). |
+| `GET /api/games/{game_id}` | Szczegóły pojedynczej gry (404, gdy brak). |
+| `GET /api/views/top-rated-games` | Ranking najwyżej ocenianych gier (paginacja). |
+| `GET /api/views/genre-stats` | Statystyki per gatunek. |
+| `GET /api/views/developer-leaderboard` | Liderzy deweloperów (paginacja). |
+| `GET /api/views/price-range-distribution` | Rozkład przedziałów cenowych. |
+| `GET /api/views/sentiment-per-genre` | Rozkład sentymentu per gatunek. |
+| `GET /api/views/monthly-releases?year_from=&year_to=` | Premiery wg miesiąca (filtr lat). |
+
+CORS jest włączony dla serwera dev frontendu (`http://localhost:5173`).
+
 ## Testy
 
 ```powershell
