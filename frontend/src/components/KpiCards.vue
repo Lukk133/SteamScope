@@ -19,16 +19,12 @@ const cards = computed(() => {
     { label: "Gatunki", value: fmt(o.total_genres) },
     { label: "Śr. ocena", value: o.avg_rating === null ? "—" : fmt(o.avg_rating, { maximumFractionDigits: 1 }) },
     { label: "Recenzje", value: fmt(o.total_reviews) },
-    {
-      label: "Szac. przychód",
-      value: o.total_estimated_revenue_usd === null ? "—" : `$${fmt(o.total_estimated_revenue_usd, { maximumFractionDigits: 0 })}`,
-    },
   ];
 });
 </script>
 
 <template>
-  <div v-if="cards.length" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+  <div v-if="cards.length" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
     <Card v-for="c in cards" :key="c.label">
       <div class="text-xs uppercase tracking-wide text-muted-foreground">{{ c.label }}</div>
       <div class="mt-1 text-2xl font-bold">{{ c.value }}</div>
