@@ -94,6 +94,14 @@ bez ponownego pobierania ~400 MB Kaggle CSV.
 `load_fact_games` używa `INSERT OR REPLACE` po PK; bridges `INSERT OR IGNORE`.
 Można uruchamiać wielokrotnie bez duplikatów.
 
+**Checkpoint kolumnowy (Parquet):** krok `parquet`
+([`backend/etl/processed.py`](../backend/etl/processed.py)) zrzuca staging
+tables do plików `.parquet` w `data/processed/`. Format kolumnowy
+(pyarrow) daje ~5–10× mniejsze pliki od CSV przy zachowaniu typów —
+notebooki, narzędzia BI i procesy ML mogą czytać te pliki bezpośrednio,
+bez podłączania się do SQLite. Krok jest częścią `--step all`, ale można
+go odpalić niezależnie.
+
 **Dwa niuanse danych warte uwagi (z komentarzami w kodzie):**
 
 1. **Kaggle CSV ma sklejony nagłówek.** `fronkongames/steam-games-dataset`

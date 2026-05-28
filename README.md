@@ -158,7 +158,10 @@ fakty i bridge-tabele:
 - `staging` — `stg_kaggle`, `stg_steam_api`, `stg_steamspy`, `stg_reviews`.
 - `dimensions` — wszystkie `dim_*`.
 - `facts` — `fact_games`, `fact_reviews`, `bridge_*`.
-- `all` — pełny przebieg.
+- `parquet` — zrzut staging tables do plików kolumnowych
+  w `data/processed/<table>.parquet` (do dalszej analizy w notebookach
+  lub narzędziach BI bez podłączania się do SQLite).
+- `all` — pełny przebieg (włącznie z parquet na końcu).
 
 ```powershell
 python -m scripts.run_etl --step all

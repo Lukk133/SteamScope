@@ -70,6 +70,15 @@ def test_cli_facts_calls_all_three() -> None:
     mr.assert_called_once()
 
 
+def test_cli_parquet_dumps_staging() -> None:
+    with (
+        patch.object(run_etl, "dump_staging_to_parquet", return_value={"stg_kaggle": 5}) as dump,
+    ):
+        exit_code = run_etl.main(["--step", "parquet"])
+    assert exit_code == 0
+    dump.assert_called_once()
+
+
 def test_cli_all_runs_every_step() -> None:
     empty_maps = {"genre": {}, "developer": {}, "platform": {},
                   "price_range": {"Free": 1}, "release_period": {}, "sentiment": {}}
@@ -83,11 +92,13 @@ def test_cli_all_runs_every_step() -> None:
         patch.object(run_etl, "load_fact_games", return_value=0),
         patch.object(run_etl, "load_bridges", return_value={"bridge_game_genre": 0, "bridge_game_platform": 0}),
         patch.object(run_etl, "load_fact_reviews", return_value=0),
+        patch.object(run_etl, "dump_staging_to_parquet", return_value={}) as dump,
     ):
         exit_code = run_etl.main(["--step", "all"])
     assert exit_code == 0
     init.assert_called_once()
     dims.assert_called_once()
+    dump.assert_called_once()
 
 
 def test_cli_unknown_step_returns_error() -> None:
