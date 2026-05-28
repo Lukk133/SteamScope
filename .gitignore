@@ -47,6 +47,7 @@ notebooks/*-checkpoint.ipynb
 # Node / Vue / Vite (frontend)
 frontend/node_modules/
 frontend/dist/
+frontend/.env
 frontend/.vite/
 frontend/.turbo/
 frontend/*.log
