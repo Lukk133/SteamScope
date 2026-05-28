@@ -13,6 +13,7 @@ import logging
 import sqlite3
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from backend.etl.parsers import parse_owners_range
@@ -27,6 +28,23 @@ def _truthy_to_int(series: pd.Series) -> pd.Series:
 _KAGGLE_EMPTY_COLUMNS = [
     "appid", "name", "price", "genres", "developers", "release_date",
     "windows", "mac", "linux",
+]
+
+# Dataset "fronkongames/steam-games-dataset" ma w nagłówku 39 nazw, ale
+# w wierszach danych 40 pól — twórca zlepił "Discount" z "DLC count" przez
+# brakujący przecinek. Nadpisujemy nagłówek pełną 40-kolumnową listą, żeby
+# wszystkie wartości od pozycji 8 nie były przesunięte o jeden.
+_KAGGLE_CSV_COLUMNS = [
+    "AppID", "Name", "Release date", "Estimated owners", "Peak CCU",
+    "Required age", "Price", "Discount", "DLC count", "About the game",
+    "Supported languages", "Full audio languages", "Reviews", "Header image",
+    "Website", "Support url", "Support email", "Windows", "Mac", "Linux",
+    "Metacritic score", "Metacritic url", "User score", "Positive", "Negative",
+    "Score rank", "Achievements", "Recommendations", "Notes",
+    "Average playtime forever", "Average playtime two weeks",
+    "Median playtime forever", "Median playtime two weeks",
+    "Developers", "Publishers", "Categories", "Genres", "Tags",
+    "Screenshots", "Movies",
 ]
 
 _STEAM_API_EMPTY_COLUMNS = [
@@ -50,11 +68,32 @@ def stage_kaggle(csv_path: Path, conn: sqlite3.Connection) -> int:
         conn.commit()
         return 0
 
-    df = pd.read_csv(csv_path)
+    # Dataset "fronkongames/steam-games-dataset" ma w nagłówku 39 nazw, ale
+    # wiersze danych mają 40 pól — twórca sklejał "Discount" i "DLC count"
+    # przez brakujący przecinek. Wykrywamy ten konkretny przypadek po obecności
+    # "DiscountDLC count" w nagłówku i wtedy nadpisujemy go pełną 40-kolumnową
+    # listą. Inne (zdrowe) pliki czytamy bez modyfikacji.
+    with open(csv_path, encoding="utf-8") as f:
+        header_line = f.readline().strip()
+    needs_header_fix = "DiscountDLC count" in header_line
+    if needs_header_fix:
+        df = pd.read_csv(
+            csv_path,
+            index_col=False,
+            low_memory=False,
+            header=0,
+            names=_KAGGLE_CSV_COLUMNS,
+        )
+    else:
+        df = pd.read_csv(csv_path, index_col=False, low_memory=False)
     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
 
     if "appid" in df.columns:
-        df["appid"] = pd.to_numeric(df["appid"], errors="coerce").astype("Int64")
+        # to_numeric parsuje stringi typu "inf"/"infinity" jako float infinity,
+        # czego astype(int) nie obsługuje — zamieniamy ±inf na NaN i dropujemy.
+        df["appid"] = pd.to_numeric(df["appid"], errors="coerce").replace(
+            [np.inf, -np.inf], np.nan
+        )
         df = df.dropna(subset=["appid"])
         df["appid"] = df["appid"].astype(int)
 
