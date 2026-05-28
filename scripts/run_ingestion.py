@@ -25,10 +25,17 @@ logger = logging.getLogger("ingestion")
 def _setup_logging() -> None:
     PATHS.ensure()
     log_file = PATHS.logs_dir / "ingestion.log"
+    # Wymuś UTF-8 na stdout (Windows domyślnie cp1250) — patrz komentarz
+    # w scripts/run_etl.py._setup_logging.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler(log_file)],
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(log_file, encoding="utf-8"),
+        ],
     )
 
 
