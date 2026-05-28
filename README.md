@@ -173,6 +173,24 @@ Dokumentacja interaktywna: `http://localhost:8000/docs`.
 
 CORS jest włączony dla serwera dev frontendu (`http://localhost:5173`).
 
+## Faza 5 — Frontend (dashboard Vue 3)
+
+Dashboard prezentuje dane z API. Wymaga Node.js ≥ 18.
+
+```powershell
+cd frontend
+npm install
+Copy-Item .env.example .env   # w razie potrzeby zmień VITE_API_BASE_URL
+npm run dev
+```
+
+Aplikacja startuje na `http://localhost:5173` i odpytuje API pod adresem
+z `VITE_API_BASE_URL` (domyślnie `http://localhost:8000`). Backend musi
+działać równolegle (`uvicorn backend.api.main:app --reload --port 8000`).
+
+Na pustej hurtowni dashboard pokazuje stany puste — dane pojawią się po
+uruchomieniu pipeline'u Faz 1–3. Testy frontendu: `npm run test` (vitest).
+
 ## Testy
 
 ```powershell
