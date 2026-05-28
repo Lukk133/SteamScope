@@ -15,10 +15,16 @@ _VIEWS_PATH = Path(__file__).resolve().parent / "views.sql"
 
 
 def connect(db_path: Path | None = None) -> sqlite3.Connection:
-    """Otwiera połączenie z SQLite i włącza foreign keys."""
+    """Otwiera połączenie z SQLite i włącza foreign keys.
+
+    ``check_same_thread=False`` — FastAPI może wywołać dependency w innym
+    wątku niż sam handler endpointu (asyncio threadpool); połączenie jest
+    używane sekwencyjnie w obrębie jednego requestu i zamykane po jego
+    zakończeniu, więc to wyłączenie jest bezpieczne.
+    """
     db_path = db_path or PATHS.db_path
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path), check_same_thread=False)
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
