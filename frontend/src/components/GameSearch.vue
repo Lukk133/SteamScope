@@ -1,9 +1,24 @@
 <script setup lang="ts">
+import { watch } from "vue";
 import Card from "@/components/ui/Card.vue";
 import Input from "@/components/ui/Input.vue";
 import { useGamesStore } from "@/stores/games";
 
 const store = useGamesStore();
+
+// Debounce: każda zmiana inputa wyzwala search po 300 ms ciszy.
+// Niezależne od Enter/submit — działa nawet jeśli fallthrough na komponent
+// gubi zdarzenie keyboardowe.
+let timer: ReturnType<typeof setTimeout> | null = null;
+watch(
+  () => store.query,
+  () => {
+    if (timer !== null) clearTimeout(timer);
+    timer = setTimeout(() => {
+      void store.search();
+    }, 300);
+  },
+);
 </script>
 
 <template>
