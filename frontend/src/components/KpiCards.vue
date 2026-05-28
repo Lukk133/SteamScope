@@ -3,7 +3,7 @@ import { computed } from "vue";
 import Card from "@/components/ui/Card.vue";
 import type { Overview } from "@/api/types";
 
-const props = defineProps<{ overview: Overview | null }>();
+const props = defineProps<{ overview: Overview | null; loading?: boolean }>();
 
 function fmt(value: number | null, opts?: Intl.NumberFormatOptions): string {
   if (value === null || value === undefined) return "—";
@@ -24,7 +24,21 @@ const cards = computed(() => {
 </script>
 
 <template>
-  <div v-if="cards.length" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+  <!-- Skeleton: pierwsze ładowanie (loading=true i jeszcze brak overview). -->
+  <div
+    v-if="loading && !overview"
+    class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5"
+    aria-label="Ładowanie KPI"
+  >
+    <Card v-for="i in 5" :key="i">
+      <div class="h-3 w-16 animate-pulse rounded bg-muted" />
+      <div class="mt-2 h-7 w-24 animate-pulse rounded bg-muted" />
+    </Card>
+  </div>
+  <div
+    v-else-if="cards.length"
+    class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5"
+  >
     <Card v-for="c in cards" :key="c.label">
       <div class="text-xs uppercase tracking-wide text-muted-foreground">{{ c.label }}</div>
       <div class="mt-1 text-2xl font-bold">{{ c.value }}</div>

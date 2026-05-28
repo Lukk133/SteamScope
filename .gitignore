@@ -51,6 +51,9 @@ frontend/.env
 frontend/.vite/
 frontend/.turbo/
 frontend/*.log
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 .npm/
 .pnpm-store/
 

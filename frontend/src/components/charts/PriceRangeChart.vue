@@ -4,7 +4,7 @@ import type { EChartsOption } from "echarts";
 import BaseChart from "./BaseChart.vue";
 import type { PriceRangeRow } from "@/api/types";
 
-const props = defineProps<{ data: PriceRangeRow[] }>();
+const props = defineProps<{ data: PriceRangeRow[]; loading?: boolean }>();
 
 const option = computed<EChartsOption>(() => ({
   tooltip: { trigger: "item" },
@@ -20,5 +20,5 @@ const option = computed<EChartsOption>(() => ({
 </script>
 
 <template>
-  <BaseChart :option="option" :empty="data.length === 0" />
+  <BaseChart :option="option" :empty="data.length === 0" :loading="loading" />
 </template>

@@ -4,7 +4,7 @@ import type { EChartsOption } from "echarts";
 import BaseChart from "./BaseChart.vue";
 import type { SentimentRow } from "@/api/types";
 
-const props = defineProps<{ data: SentimentRow[] }>();
+const props = defineProps<{ data: SentimentRow[]; loading?: boolean }>();
 
 const option = computed<EChartsOption>(() => {
   const genres = [...new Set(props.data.map((r) => r.genre))];
@@ -30,5 +30,5 @@ const option = computed<EChartsOption>(() => {
 </script>
 
 <template>
-  <BaseChart :option="option" :empty="data.length === 0" />
+  <BaseChart :option="option" :empty="data.length === 0" :loading="loading" />
 </template>

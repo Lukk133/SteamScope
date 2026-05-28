@@ -4,7 +4,7 @@ import type { EChartsOption } from "echarts";
 import BaseChart from "./BaseChart.vue";
 import type { DeveloperRow } from "@/api/types";
 
-const props = defineProps<{ data: DeveloperRow[] }>();
+const props = defineProps<{ data: DeveloperRow[]; loading?: boolean }>();
 
 const option = computed<EChartsOption>(() => {
   const sorted = [...props.data].sort(
@@ -27,5 +27,5 @@ const option = computed<EChartsOption>(() => {
 </script>
 
 <template>
-  <BaseChart :option="option" :empty="data.length === 0" />
+  <BaseChart :option="option" :empty="data.length === 0" :loading="loading" />
 </template>
